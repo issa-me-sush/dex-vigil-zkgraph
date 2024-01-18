@@ -1,15 +1,15 @@
 specVersion: 0.0.2
 apiVersion: 0.0.2
 name: dex_vigil
-description: "This demo zkGraph shows Uniswap price-based zkAutomation case. Calculate ETH/USDC price, set it as the trigger payload whenever price > theshold."
-repository: https://github.com/hyperoracle/zkgraph
+description: "Monitors DEX swap events for unusual trading activities."
+repository: https://github.com/issa-me-sush/dex-vigil-zkgraph
 dataSources:
   - kind: ethereum
     network: sepolia
     event:
-      - address: '0xa60ecf32309539dd84f27a9563754dca818b815e'
+      - address: '0x98D6153b068A96Adac33454a85303AcBa5A8A06E'
         events: 
-          - "Sync(uint112,uint112)"
+          - "Swap(address,uint256,uint256,uint256,uint256,address)"
 
 mapping:
   language: wasm/assemblyscript
@@ -19,4 +19,4 @@ mapping:
 dataDestinations:
   - kind: ethereum
     network: sepolia
-    address: "0x0000000000000000000000000000000000000001"
+    address: "0x0000000000000000000000000000000000000001"  # will update example destination contract soon
