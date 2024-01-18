@@ -1,5 +1,5 @@
 //@ts-ignore
-import { BigInt, Bytes, Block, Event } from "@hyperoracle/zkgraph-lib";
+import { BigInt, Bytes, Block, Event, ByteArray } from "@hyperoracle/zkgraph-lib";
 
 class SwapData {
     amount0In: BigInt;
@@ -29,6 +29,10 @@ function processSwapEvent(event: Event): SwapData {
     return new SwapData(amount0In, amount1In, amount0Out, amount1Out);
 }
 
+function convertBigIntToByteArray(value: BigInt): ByteArray {
+    return ByteArray.fromHexString(value.toHexString().padStart(64, '0'));
+}
+
 export function handleBlocks(blocks: Block[]): Bytes {
     let events = blocks[0].events;
 
@@ -37,13 +41,24 @@ export function handleBlocks(blocks: Block[]): Bytes {
         if (event.esig == Bytes.fromHexString("0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822")) {
             let swapData = processSwapEvent(event);
             if (detectAnomalies(swapData)) {
-           
-              
-              let calldata = Bytes.fromHexString("0xdc03cf08");
-                return calldata.padEnd(32);
+                // Manually assemble calldata
+                let functionSignature = ByteArray.fromHexString("dc03cf08");
+                let anomalyFlag = ByteArray.fromHexString("0000000000000000000000000000000000000000000000000000000000000001"); // True flag
+                let amount0InBytes = convertBigIntToByteArray(swapData.amount0In);
+                let amount1InBytes = convertBigIntToByteArray(swapData.amount1In);
+                let amount0OutBytes = convertBigIntToByteArray(swapData.amount0Out);
+                let amount1OutBytes = convertBigIntToByteArray(swapData.amount1Out);
+
+                let calldata = ByteArray.empty();
+                calldata = calldata.concat(functionSignature)
+                                   .concat(anomalyFlag)
+                                   .concat(amount0InBytes)
+                                   .concat(amount1InBytes)
+                                   .concat(amount0OutBytes)
+                                   .concat(amount1OutBytes);
+                return Bytes.fromByteArray(calldata);
             }
         }
     }
-    return Bytes.empty(); 
+    return Bytes.empty();
 }
-
