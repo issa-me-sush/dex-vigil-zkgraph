@@ -1,70 +1,49 @@
 //@ts-ignore
-import { require } from "@hyperoracle/zkgraph-lib";
-import { Bytes, Block, Event, BigInt } from "@hyperoracle/zkgraph-lib";
+import { BigInt, Bytes, Block, Event } from "@hyperoracle/zkgraph-lib";
 
-var esig_sync = Bytes.fromHexString(
-  "0x1c411e9a96e071241c2f21f7726b17ae89e3cab4c78be50e062b03a9fffbbad1",
-);
-var esig_swap = Bytes.fromHexString(
-  "0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822",
-);
+class SwapData {
+    amount0In: BigInt;
+    amount1In: BigInt;
+    amount0Out: BigInt;
+    amount1Out: BigInt;
 
-var token0_decimals = 6;
-var token1_decimals = 18;
-var price_decimals = 3;
+    constructor(amount0In: BigInt, amount1In: BigInt, amount0Out: BigInt, amount1Out: BigInt) {
+        this.amount0In = amount0In;
+        this.amount1In = amount1In;
+        this.amount0Out = amount0Out;
+        this.amount1Out = amount1Out;
+    }
+}
 
-var threshold_eth_price = 1880;
+function detectAnomalies(swapData: SwapData): boolean {
+    const volumeThreshold = BigInt.fromString("100000");
+    return swapData.amount0In.gt(volumeThreshold) || swapData.amount1In.gt(volumeThreshold) ||
+           swapData.amount0Out.gt(volumeThreshold) || swapData.amount1Out.gt(volumeThreshold);
+}
 
-var token0_factor = BigInt.from(10).pow(token1_decimals);
-var token1_factor = BigInt.from(10).pow(token0_decimals);
-var price_factor = BigInt.from(10).pow(price_decimals);
-
-function calcPrice(syncEvent: Event): BigInt {
-  const source = changetype<Bytes>(syncEvent.data);
-  const reserve0 = source.slice(0, 32);
-  const reserve1 = source.slice(32, 64);
-
-  const r0 = BigInt.fromBytesBigEndian(reserve0);
-  const r1 = BigInt.fromBytesBigEndian(reserve1);
-  let price0 = r0
-    .times(token0_factor)
-    .times(price_factor)
-    .div(r1.times(token1_factor));
-
-  return price0;
+function processSwapEvent(event: Event): SwapData {
+    const amount0In = BigInt.fromBytes(event.data.slice(0, 32));
+    const amount1In = BigInt.fromBytes(event.data.slice(32, 64));
+    const amount0Out = BigInt.fromBytes(event.data.slice(64, 96));
+    const amount1Out = BigInt.fromBytes(event.data.slice(96, 128));
+    return new SwapData(amount0In, amount1In, amount0Out, amount1Out);
 }
 
 export function handleBlocks(blocks: Block[]): Bytes {
-  let lastSyncEvent: Event | null = null;
+    let events = blocks[0].events;
 
-  let events = blocks[0].events;
-
-  for (let i = events.length - 1; i >= 0; i--) {
-    if (events[i].esig == esig_sync) {
-      //   console.log('SYNC event');
-      lastSyncEvent = events[i];
-      break;
+    for (let i = 0; i < events.length; i++) {
+        let event = events[i];
+        if (event.esig == Bytes.fromHexString("0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822")) {
+            let swapData = processSwapEvent(event);
+            if (detectAnomalies(swapData)) {
+           
+              
+              let calldata = Bytes.fromHexString("0xdc03cf08");
+                return calldata.padEnd(32);
+            }
+        }
     }
-  }
-
-  if (lastSyncEvent == null) {
-    // Don't Trigger if there's no event in the block
-    require(false);
-    return Bytes.empty(); // Omit compile error, never goes here
-  } else {
-    let price0 = calcPrice(lastSyncEvent);
-
-    // console.log("Current price is: " + (price0.toI64() / 10**price_decimals).toString() + "." + (price0.toI64() % 10**price_decimals).toString())
-
-    // Only Trigger when price > pre-defined threshold
-    let triggerCondition = price0.ge(
-      BigInt.fromI32(threshold_eth_price * 10 ** price_decimals),
-    );
-    // ATTENTION: REMOVE THIS IF YOU WANT TO SEE THE OUTPUT
-    require(triggerCondition);
-
-    // Set payload to the current price0 when triggering destination contract.
-    let payload = Bytes.fromHexString(price0.toString(16)).padStart(32, 0);
-    return payload;
-  }
+    return Bytes.empty(); 
 }
+
