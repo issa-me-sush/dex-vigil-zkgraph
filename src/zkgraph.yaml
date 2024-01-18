@@ -1,6 +1,6 @@
 specVersion: 0.0.2
 apiVersion: 0.0.2
-name: eg_autoprice
+name: dex_vigil
 description: "This demo zkGraph shows Uniswap price-based zkAutomation case. Calculate ETH/USDC price, set it as the trigger payload whenever price > theshold."
 repository: https://github.com/hyperoracle/zkgraph
 dataSources:

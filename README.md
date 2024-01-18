@@ -1,4 +1,5 @@
-# zkGraph uniswrapperice template
+# DEX VIGIL 
+zkGraph that keeps an eye on the swap events to detect anomalous behavior and possibly prevent exploits.
 
 ## Usage CLI
 
