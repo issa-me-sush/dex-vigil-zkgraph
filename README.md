@@ -1,5 +1,7 @@
 # DEX VIGIL 
 zkGraph that keeps an eye on the swap events to detect anomalous behavior and possibly prevent exploits.
+Can be extended to any criterias, attack signatures, and track multiple different metrics to keep the pools safe.
+A simple scenario has been considered in the current implementation.
 - **Image ID**: `E38E5801A8B69486DE670CDF07469244`
 - **IPFS Hash**: `QmYYXqRxHHbHU9LD6JdAmd1VhjaRAiLKbhcBNdbFBG9cF7`
 - **Publish Transaction**: `0x8de23ed3bb3971e4bd3faa89b1d28191d4b1433467cf3315a81f3afeab18b002`
